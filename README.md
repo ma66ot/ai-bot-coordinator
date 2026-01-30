@@ -1,4 +1,4 @@
-# ClawBot Coordinator
+# Ai Bot Coordinator
 
 A production-ready task orchestration system for managing distributed bot workers with real-time communication and workflow automation.
 
