@@ -7,6 +7,8 @@ A production-ready task orchestration system for managing distributed bot worker
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
+![readme-graphic.jpg](readme-graphic.jpg)
+
 ## Overview
 
 ClawBot Coordinator is a scalable microservice that orchestrates task execution across a fleet of bot workers. It provides:
