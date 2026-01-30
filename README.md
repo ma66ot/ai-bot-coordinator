@@ -11,7 +11,7 @@ A production-ready task orchestration system for managing distributed bot worker
 
 ## Overview
 
-ClawBot Coordinator is a scalable microservice that orchestrates task execution across a fleet of bot workers. It provides:
+Ai Bot Coordinator is a scalable microservice that orchestrates task execution across a fleet of bot workers. It provides:
 
 - **Bot Management**: Register, monitor, and manage bot workers
 - **Task Orchestration**: Create, assign, and track task execution
