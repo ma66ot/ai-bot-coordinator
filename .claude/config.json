@@ -1,0 +1,15 @@
+{
+  "project_type": "fastapi-python",
+  "test_framework": "pytest-asyncio",
+  "python_version": "3.12",
+  "enforce_types": true,
+  "auto_imports": false,
+  "preferred_import_style": "absolute",
+  "test_location_preference": "mirror_structure",
+  "docstring_style": "google",
+  "architecture_constraints": {
+    "domain_layer_pure": true,
+    "dependency_injection": true,
+    "repository_pattern": true
+  }
+}

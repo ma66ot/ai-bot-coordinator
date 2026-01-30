@@ -1,0 +1,47 @@
+# This file prevents AI from cross-contaminating features
+# When working on a slice, ONLY modify files in that slice's scope
+
+slices:
+  bot_management:
+    entry: src/clawbot_coordinator/api/routes/bots.py
+    domain:
+      - src/clawbot_coordinator/domain/models/bot.py
+      - src/clawbot_coordinator/domain/repositories/bot_repo.py
+      - src/clawbot_coordinator/domain/services/bot_service.py
+    infrastructure:
+      - src/clawbot_coordinator/infrastructure/repositories/postgres_bot_repo.py
+      - src/clawbot_coordinator/infrastructure/websocket/manager.py
+    tests:
+      - tests/unit/domain/test_bot.py
+      - tests/feature/test_bot_api.py
+    depends_on: []  # Foundation layer only
+
+  task_system:
+    entry: src/clawbot_coordinator/api/routes/tasks.py
+    domain:
+      - src/clawbot_coordinator/domain/models/task.py
+      - src/clawbot_coordinator/domain/repositories/task_repo.py
+      - src/clawbot_coordinator/domain/services/task_service.py
+    infrastructure:
+      - src/clawbot_coordinator/infrastructure/repositories/postgres_task_repo.py
+      - src/clawbot_coordinator/workers/queue.py
+    tests:
+      - tests/unit/domain/test_task_state_machine.py
+      - tests/feature/test_task_submission.py
+    depends_on: [bot_management]  # Cannot work without bots
+
+  workflow_engine:
+    entry: src/clawbot_coordinator/api/routes/workflows.py
+    domain:
+      - src/clawbot_coordinator/domain/models/workflow.py
+      - src/clawbot_coordinator/domain/repositories/workflow_repo.py
+      - src/clawbot_coordinator/domain/services/workflow_service.py
+    infrastructure:
+      - src/clawbot_coordinator/infrastructure/repositories/postgres_workflow_repo.py
+    tests:
+      - tests/unit/domain/test_workflow_aggregate.py
+      - tests/feature/test_full_workflow.py
+    depends_on: [task_system]
+
+# AI Instruction: When adding a feature, identify its slice first.
+# If modifying multiple slices, implement sequentially based on dependencies.

@@ -1,0 +1,83 @@
+# Docker Compose for ClawBot Coordinator - Development Environment
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: clawbot-postgres
+    environment:
+      POSTGRES_USER: clawbot
+      POSTGRES_PASSWORD: clawbot
+      POSTGRES_DB: clawbot_coordinator
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clawbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clawbot-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: clawbot-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clawbot-network
+
+  # ClawBot Coordinator Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clawbot-app
+    environment:
+      DATABASE_URL: postgresql+asyncpg://clawbot:clawbot@postgres:5432/clawbot_coordinator
+      REDIS_URL: redis://redis:6379/0
+      APP_NAME: ClawBot Coordinator
+      ENVIRONMENT: development
+      DEBUG: "true"
+    volumes:
+      # Mount source code for hot reload in development
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn clawbot_coordinator.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - clawbot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  clawbot-network:
+    driver: bridge

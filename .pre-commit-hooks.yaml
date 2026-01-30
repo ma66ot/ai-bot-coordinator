@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-domain-purity
+        name: Domain Layer Purity Check
+        entry: python scripts/check_domain_imports.py
+        language: python
+        pass_filenames: false
+        always_run: true

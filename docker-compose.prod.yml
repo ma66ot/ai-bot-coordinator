@@ -1,0 +1,89 @@
+# Docker Compose for ClawBot Coordinator - Production Environment
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: clawbot-postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-clawbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-clawbot_coordinator}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-clawbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clawbot-network-prod
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: clawbot-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    volumes:
+      - redis_data_prod:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--auth", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clawbot-network-prod
+    restart: unless-stopped
+
+  # ClawBot Coordinator Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clawbot-app-prod
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-clawbot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-clawbot_coordinator}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      APP_NAME: ClawBot Coordinator
+      ENVIRONMENT: production
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - clawbot-network-prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+volumes:
+  postgres_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+
+networks:
+  clawbot-network-prod:
+    driver: bridge
